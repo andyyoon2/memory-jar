@@ -2,7 +2,7 @@
 
 import { DynamoDBClient, GetItemCommand, DeleteItemCommand } from '@aws-sdk/client-dynamodb';
 import { AttributeValue as attr } from 'dynamodb-data-types';
-import { USER_PREFIX } from '../../constants';
+import { USER_PREFIX } from '../../utils';
 
 const client = new DynamoDBClient({});
 

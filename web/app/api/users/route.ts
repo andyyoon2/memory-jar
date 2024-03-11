@@ -1,7 +1,7 @@
 import * as uuid from 'uuid';
 import { DynamoDBClient, ScanCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { AttributeValue as attr, updateExpr } from 'dynamodb-data-types';
-import { USER_PREFIX } from '../constants';
+import { USER_PREFIX } from '../utils';
 
 const client = new DynamoDBClient({});
 
@@ -42,8 +42,8 @@ export async function GET() {
   const { Items } = await client.send(
     new ScanCommand({
       TableName: process.env.TABLE_NAME,
-      FilterExpression: "contains(PK, :prefix)",
-      ExpressionAttributeValues: { ":prefix": { S: "u#" } },
+      // FilterExpression: "contains(PK, :prefix)",
+      // ExpressionAttributeValues: { ":prefix": { S: "u#" } },
     })
   );
 
