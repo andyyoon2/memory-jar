@@ -1,5 +1,5 @@
 import * as uuid from 'uuid';
-import { DynamoDBClient, TransactWriteItemsCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, TransactWriteItemsCommand } from '@aws-sdk/client-dynamodb';
 import { AttributeValue as attr, updateExpr } from 'dynamodb-data-types';
 import { JAR_PREFIX, wrapKey } from '../utils';
 
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     .expr();
 
   // Create new jar and jar-user record in one transaction
-  const response = await client.send(
+  await client.send(
     new TransactWriteItemsCommand({
       TransactItems: [
         {
@@ -58,13 +58,10 @@ export async function POST(request: Request) {
             ...jarUserUpdateExpr,
           }
         },
-      ]
+      ],
     })
   );
-  // TODO: How to get the created ID from this response
-  console.log(response);
-  // TODO: Error handling
+  // TODO: Read response if nec, handle errors
 
-  const newJarRecord = attr.unwrap(response ?? {});
-  return Response.json(newJarRecord);
+  return Response.json({ id: jarId });
 }
