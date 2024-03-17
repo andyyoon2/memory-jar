@@ -1,7 +1,11 @@
-import * as uuid from 'uuid';
-import { DynamoDBClient, ScanCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
-import { AttributeValue as attr, updateExpr } from 'dynamodb-data-types';
-import { USER_PREFIX } from '../utils';
+import {
+  DynamoDBClient,
+  ScanCommand,
+  UpdateItemCommand,
+} from "@aws-sdk/client-dynamodb";
+import { AttributeValue as attr, updateExpr } from "dynamodb-data-types";
+import * as uuid from "uuid";
+import { USER_PREFIX } from "../utils";
 
 const client = new DynamoDBClient({});
 
@@ -28,7 +32,7 @@ export async function POST(request: Request) {
       Key,
       ...update,
       ReturnValues: "ALL_NEW",
-    })
+    }),
   );
   // TODO: Error handling
 
@@ -44,10 +48,9 @@ export async function GET() {
       TableName: process.env.TABLE_NAME,
       // FilterExpression: "contains(PK, :prefix)",
       // ExpressionAttributeValues: { ":prefix": { S: "u#" } },
-    })
+    }),
   );
 
   const users = Items?.map(attr.unwrap);
   return Response.json(users);
 }
-

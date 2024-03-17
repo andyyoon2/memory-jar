@@ -1,1 +1,1 @@
-declare module 'dynamodb-data-types';
+declare module "dynamodb-data-types";

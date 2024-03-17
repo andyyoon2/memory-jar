@@ -1,11 +1,14 @@
-import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
-import { AttributeValue as attr } from 'dynamodb-data-types';
-import { JAR_PREFIX, USER_PREFIX } from '@/app/api/utils';
+import { JAR_PREFIX, USER_PREFIX } from "@/app/api/utils";
+import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
+import { AttributeValue as attr } from "dynamodb-data-types";
 
 const client = new DynamoDBClient({});
 
 // Get all jars for this user
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  _request: Request,
+  { params }: { params: { id: string } },
+) {
   if (!params.id) {
     return Response.json({ error: "User ID is required" }, { status: 400 });
   }
@@ -20,20 +23,21 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     new QueryCommand({
       TableName: process.env.TABLE_NAME,
       IndexName: "GSI1",
-      KeyConditionExpression: "GSI1_PK = :userId and begins_with(GSI1_SK, :jarPrefix)",
+      KeyConditionExpression:
+        "GSI1_PK = :userId and begins_with(GSI1_SK, :jarPrefix)",
       ExpressionAttributeValues,
       ProjectionExpression: "GSI1_SK, mjName, mjColor, mjIcon",
-    })
+    }),
   );
 
-  const jars = (jarRecords ?? []).map(jarRecord => {
+  const jars = (jarRecords ?? []).map((jarRecord) => {
     const jar = attr.unwrap(jarRecord);
     return {
       id: jar.GSI1_SK.substring(JAR_PREFIX.length),
       name: jar.mjName,
       color: jar.mjColor,
       icon: jar.mjIcon,
-    }
+    };
   });
 
   return Response.json(jars);

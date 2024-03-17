@@ -1,14 +1,26 @@
-import { DynamoDBClient, BatchWriteItemCommand, UpdateItemCommand, QueryCommand, GetItemCommand } from '@aws-sdk/client-dynamodb';
-import { AttributeValue as attr, updateExpr } from 'dynamodb-data-types';
-import { JAR_PREFIX, USER_PREFIX } from '../../utils';
+import {
+  BatchWriteItemCommand,
+  DynamoDBClient,
+  GetItemCommand,
+  QueryCommand,
+  UpdateItemCommand,
+} from "@aws-sdk/client-dynamodb";
+import { AttributeValue as attr, updateExpr } from "dynamodb-data-types";
+import { JAR_PREFIX, USER_PREFIX } from "../../utils";
 
 const client = new DynamoDBClient({});
 
 /** Get jar info and all users in a jar */
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  _request: Request,
+  { params }: { params: { id: string } },
+) {
   const TABLE_NAME = process.env.TABLE_NAME;
   if (!TABLE_NAME) {
-    return Response.json({ error: "Error reading table name" }, { status: 500 });
+    return Response.json(
+      { error: "Error reading table name" },
+      { status: 500 },
+    );
   }
 
   const jarId = `${JAR_PREFIX}${params.id}`;
@@ -16,7 +28,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const getJarCommand = new GetItemCommand({
     TableName: TABLE_NAME,
     Key,
-    ProjectionExpression: "PK, mjName, mjColor, mjIcon"
+    ProjectionExpression: "PK, mjName, mjColor, mjIcon",
   });
 
   // Retrieve all users in this jar. TODO: Handle pagination if necessary (BatchGetItems can get 100 max at once)
@@ -49,20 +61,23 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     },
     users: [] as any[], // TODO: Type definitions for all API results etc.
   };
-  (userRecords ?? []).forEach(userRecord => {
+  for (const userRecord of userRecords ?? []) {
     const user = attr.unwrap(userRecord);
     result.users.push({
       id: user.SK.substring(USER_PREFIX.length),
       name: user.uName,
       image: user.uImage,
     });
-  });
+  }
 
   return Response.json(result);
 }
 
 /** Add a user to a jar */
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
   const body = await request.json();
   if (!body.userId) {
     return Response.json({ error: "User ID is required" }, { status: 400 });
@@ -75,11 +90,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   const { Item: userRecord } = await client.send(
     new GetItemCommand({
       TableName: process.env.TABLE_NAME,
-      Key: attr.wrap({ PK: userId, SK: userId })
-    })
+      Key: attr.wrap({ PK: userId, SK: userId }),
+    }),
   );
   const user = attr.unwrap(userRecord);
-  console.log('got user', JSON.stringify(user));
+  console.log("got user", JSON.stringify(user));
 
   // Build UpdateCommand for new jar->user record
   const Key = attr.wrap({
@@ -101,7 +116,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       Key,
       ...jarUpdateExpr,
       ReturnValues: "ALL_NEW",
-    })
+    }),
   );
 
   const newRecord = attr.unwrap(Attributes ?? {});
@@ -109,10 +124,16 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 /** Delete a jar */
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  _request: Request,
+  { params }: { params: { id: string } },
+) {
   const TABLE_NAME = process.env.TABLE_NAME;
   if (!TABLE_NAME) {
-    return Response.json({ error: "Error reading table name" }, { status: 500 });
+    return Response.json(
+      { error: "Error reading table name" },
+      { status: 500 },
+    );
   }
 
   const jarId = `${JAR_PREFIX}${params.id}`;
@@ -133,37 +154,38 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
       ExpressionAttributeValues,
       ProjectionExpression: "SK",
       ScanIndexForward: false,
-    })
+    }),
   );
-  console.log('got items', Items);
+  console.log("got items", Items);
   // const results = attr.unwrap(Items ?? {});
 
   // Delete the jar and the jar-user records
-  const itemsToDelete = [{
-    DeleteRequest: {
-      Key: attr.wrap({ PK: jarId, SK: jarId })
-    }
-  }];
-  Items?.forEach(item => {
+  const itemsToDelete = [
+    {
+      DeleteRequest: {
+        Key: attr.wrap({ PK: jarId, SK: jarId }),
+      },
+    },
+  ];
+  for (const item of Items ?? []) {
     itemsToDelete.push({
       DeleteRequest: {
         Key: {
           ...attr.wrap({ PK: jarId }),
-          SK: item.SK // No need to wrap this because it was returned by the QueryCommand above
-        }
-      }
-    })
-  });
-  console.log('to delete', JSON.stringify(itemsToDelete));
+          SK: item.SK, // No need to wrap this because it was returned by the QueryCommand above
+        },
+      },
+    });
+  }
+  console.log("to delete", JSON.stringify(itemsToDelete));
   const response = await client.send(
     new BatchWriteItemCommand({
       RequestItems: {
-        [TABLE_NAME]: itemsToDelete
-      }
-    })
+        [TABLE_NAME]: itemsToDelete,
+      },
+    }),
   );
   // TODO: Handle response.UnprocessedItems
 
   return Response.json(response);
 }
-

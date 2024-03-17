@@ -1,7 +1,10 @@
-import * as uuid from 'uuid';
-import { DynamoDBClient, TransactWriteItemsCommand } from '@aws-sdk/client-dynamodb';
-import { AttributeValue as attr, updateExpr } from 'dynamodb-data-types';
-import { JAR_PREFIX, wrapKey } from '../utils';
+import {
+  DynamoDBClient,
+  TransactWriteItemsCommand,
+} from "@aws-sdk/client-dynamodb";
+import { AttributeValue as attr, updateExpr } from "dynamodb-data-types";
+import * as uuid from "uuid";
+import { JAR_PREFIX, wrapKey } from "../utils";
 
 const client = new DynamoDBClient({});
 
@@ -29,7 +32,7 @@ export async function POST(request: Request) {
     .expr();
 
   // Build UpdateCommand for the creating user
-  const userId = wrapKey(body.userId, 'user');
+  const userId = wrapKey(body.userId, "user");
   const jarUserKey = attr.wrap({
     PK: jarId,
     SK: userId,
@@ -49,17 +52,17 @@ export async function POST(request: Request) {
             TableName: process.env.TABLE_NAME,
             Key: jarKey,
             ...jarUpdateExpr,
-          }
+          },
         },
         {
           Update: {
             TableName: process.env.TABLE_NAME,
             Key: jarUserKey,
             ...jarUserUpdateExpr,
-          }
+          },
         },
       ],
-    })
+    }),
   );
   // TODO: Read response if nec, handle errors
 
